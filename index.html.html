@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CHAMPUBOOKS - OPORTUNIDADES FKG</title>
+  <style>
+    /* 🎨 Colores del colegio */
+    :root {
+      --rojo: #e30613;
+      --gris: #333333;
+      --negro: #000000;
+      --blanco: #ffffff;
+    }
+
+    body {
+      font-family: "Arial", sans-serif;
+      background-color: var(--gris);
+      color: var(--blanco);
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: var(--negro);
+      color: var(--rojo);
+      text-align: center;
+      padding: 20px;
+      font-size: 1.5em;
+      letter-spacing: 2px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    h1, h2, h3 {
+      color: var(--rojo);
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: none;
+    }
+
+    input {
+      width: 250px;
+    }
+
+    button {
+      background-color: var(--rojo);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #ff4040;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background-color: #444;
+    }
+
+    th, td {
+      border: 1px solid var(--rojo);
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: var(--negro);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      background-color: var(--negro);
+      color: var(--blanco);
+      font-size: 0.9em;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>📚 CHAMPUBOOKS - OPORTUNIDADES FKG ❤🖤</header>
+
+  <main>
+    <h2>Bienvenido a tu biblioteca digital</h2>
+    <p>Regístrate, inicia sesión y empieza a prestar libros.</p>
+
+    <!-- Botón para ir al panel de administración -->
+<div id="admin-boton">
+  <a href="admin.html">
+    <button>Ir al panel de administración</button>
+  </a>
+</div>
+
+    <!-- Registro -->
+    <div id="registro">
+      <h3>Crear cuenta</h3>
+      <input type="text" id="reg-usuario" placeholder="Usuario"><br>
+      <input type="password" id="reg-pass" placeholder="Contraseña"><br>
+      <button onclick="registrar()">Registrar</button>
+    </div>
+
+    <!-- Login -->
+    <div id="login">
+      <h3>Iniciar sesión</h3>
+      <input type="text" id="login-usuario" placeholder="Usuario"><br>
+      <input type="password" id="login-pass" placeholder="Contraseña"><br>
+      <button onclick="login()">Entrar</button>
+    </div>
+
+    <!-- Panel de usuario -->
+    <div id="panel" class="hidden">
+      <h3 id="bienvenida"></h3>
+      <button onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <!-- Búsqueda y tabla de libros -->
+    <input type="text" id="buscar" placeholder="🔍 Buscar libro...">
+    <table id="tabla-datos"></table>
+
+    <!-- Historial -->
+    <h3>📖 Historial de préstamos</h3>
+    <table id="tabla-historial"></table>
+  </main>
+
+  <footer>
+    Desarrollado por Marr y Nestor - Proyecto Oportunidades FKG
+  </footer>
+
+  <script>
+    const tabla = document.getElementById("tabla-datos");
+    const buscar = document.getElementById("buscar");
+
+    // 🌟 Datos principales
+    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    let usuarioActivo = null;
+    let libros = JSON.parse(localStorage.getItem("libros")) || [];
+    let historial = JSON.parse(localStorage.getItem("historial")) || [];
+
+    function guardarDatos() {
+      localStorage.setItem("usuarios", JSON.stringify(usuarios));
+      localStorage.setItem("libros", JSON.stringify(libros));
+      localStorage.setItem("historial", JSON.stringify(historial));
+    }
+
+    // 📘 Cargar libros desde datos.csv
+    if (libros.length === 0) {
+      fetch("datos.csv")
+        .then(res => res.text())
+        .then(texto => {
+          const filas = texto.trim().split("\n").slice(1);
+          libros = filas.map(fila => {
+            const [titulo, autor] = fila.split(",");
+            return { titulo, autor, estado: "disponible", usuario: "" };
+          });
+          guardarDatos();
+          mostrarLibros(libros);
+        });
+    } else {
+      mostrarLibros(libros);
+    }
+
+    // 👦 Crear usuario
+    function registrar() {
+      const u = document.getElementById("reg-usuario").value;
+      const p = document.getElementById("reg-pass").value;
+      if (!u || !p) return alert("Llena todos los campos");
+
+      if (usuarios.find(user => user.usuario === u)) {
+        return alert("Ese usuario ya existe 😅");
+      }
+
+      usuarios.push({usuario: u, pass: p});
+      guardarDatos();
+      alert("Usuario registrado con éxito 🎉");
+    }
+
+    // 🔐 Iniciar sesión
+    function login() {
+      const u = document.getElementById("login-usuario").value;
+      const p = document.getElementById("login-pass").value;
+      const user = usuarios.find(user => user.usuario === u && user.pass === p);
+      if (!user) return alert("Usuario o contraseña incorrectos 😔");
+
+      usuarioActivo = u;
+      document.getElementById("bienvenida").textContent = "Hola " + usuarioActivo + " 👋";
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("registro").classList.add("hidden");
+      document.getElementById("panel").classList.remove("hidden");
+      mostrarLibros(libros);
+    }
+
+    // 🚪 Cerrar sesión
+    function logout() {
+      usuarioActivo = null;
+      document.getElementById("panel").classList.add("hidden");
+      document.getElementById("login").classList.remove("hidden");
+      document.getElementById("registro").classList.remove("hidden");
+    }
+
+    // 📚 Mostrar libros
+    function mostrarLibros(lista) {
+      tabla.innerHTML = `
+        <tr>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      `;
+
+      lista.forEach((libro, i) => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${libro.titulo}</td>
+          <td>${libro.autor}</td>
+          <td>${libro.estado}${libro.usuario ? " (por " + libro.usuario + ")" : ""}</td>
+          <td>
+            ${libro.estado === "disponible"
+              ? `<button onclick="prestar(${i})">Prestar</button>`
+              : libro.usuario === usuarioActivo
+                ? `<button onclick="devolver(${i})">Devolver</button>`
+                : ""}
+          </td>
+        `;
+        tabla.appendChild(fila);
+      });
+    }
+
+    // 🔍 Buscar libros
+    buscar.addEventListener("input", () => {
+      const texto = buscar.value.toLowerCase();
+      const filtrados = libros.filter(l =>
+        l.titulo.toLowerCase().includes(texto) ||
+        l.autor.toLowerCase().includes(texto)
+      );
+      mostrarLibros(filtrados);
+    });
+
+    // 📥 Prestar libro
+    function prestar(i) {
+      if (!usuarioActivo) return alert("Debes iniciar sesión primero");
+      if (libros[i].estado === "disponible") {
+        libros[i].estado = "prestado";
+        libros[i].usuario = usuarioActivo;
+
+        historial.push({
+          usuario: usuarioActivo,
+          libro: libros[i].titulo,
+          accion: "prestado",
+          fecha: new Date().toLocaleString()
+        });
+
+        guardarDatos();
+        mostrarLibros(libros);
+        mostrarHistorial();
+      }
+    }
+
+    // 📤 Devolver libro
+    function devolver(i) {
+      if (!usuarioActivo) return;
+      if (libros[i].usuario === usuarioActivo) {
+        libros[i].estado = "disponible";
+        libros[i].usuario = "";
+
+        historial.push({
+          usuario: usuarioActivo,
+          libro: libros[i].titulo,
+          accion: "devuelto",
+          fecha: new Date().toLocaleString()
+        });
+
+        guardarDatos();
+        mostrarLibros(libros);
+        mostrarHistorial();
+      }
+    }
+
+    // 🕓 Mostrar historial
+    function mostrarHistorial() {
+      const tablaHist = document.getElementById("tabla-historial");
+      tablaHist.innerHTML = `
+        <tr>
+          <th>Usuario</th>
+          <th>Libro</th>
+          <th>Acción</th>
+          <th>Fecha</th>
+        </tr>
+      `;
+
+      historial.forEach(mov => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${mov.usuario}</td>
+          <td>${mov.libro}</td>
+          <td>${mov.accion}</td>
+          <td>${mov.fecha}</td>
+        `;
+        tablaHist.appendChild(fila);
+      });
+    }
+    
+
+    mostrarHistorial();
+  </script>
+</body>
+</html>
+

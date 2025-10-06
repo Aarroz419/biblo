@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #eb0808; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    input { margin: 5px 0; padding: 8px; width: 300px; }
+    button { padding: 8px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>🔒 Panel Admin</h1>
+
+  <!-- Login admin -->
+  <div id="admin-login">
+    <h3>Iniciar sesión como administrador</h3>
+    <input type="text" id="admin-user" placeholder="Usuario"><br>
+    <input type="password" id="admin-pass" placeholder="Contraseña"><br>
+    <button onclick="loginAdmin()">Entrar</button>
+  </div>
+
+  <!-- Panel admin -->
+  <div id="admin-panel" class="hidden">
+    <h3>Usuarios registrados</h3>
+    <ul id="lista-usuarios"></ul>
+
+    <h3>Historial de movimientos</h3>
+    <table id="tabla-historial"></table>
+
+    <button onclick="logoutAdmin()">Cerrar sesión</button>
+  </div>
+
+  <script>
+    // -------------------------------
+    // CONFIGURACIÓN DE ADMIN
+    // -------------------------------
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "1234"; // Cambia esto a tu contraseña segura
+
+    const adminLogin = document.getElementById("admin-login");
+    const adminPanel = document.getElementById("admin-panel");
+
+    function loginAdmin() {
+      const user = document.getElementById("admin-user").value;
+      const pass = document.getElementById("admin-pass").value;
+
+      if(user === ADMIN_USER && pass === ADMIN_PASS) {
+        adminLogin.classList.add("hidden");
+        adminPanel.classList.remove("hidden");
+        mostrarUsuarios();
+        mostrarHistorialAdmin();
+      } else {
+        alert("Usuario o contraseña incorrectos");
+      }
+    }
+
+    function logoutAdmin() {
+      adminLogin.classList.remove("hidden");
+      adminPanel.classList.add("hidden");
+    }
+
+    // -------------------------------
+    // MOSTRAR USUARIOS
+    // -------------------------------
+    function mostrarUsuarios() {
+      const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+      const lista = document.getElementById("lista-usuarios");
+      lista.innerHTML = "";
+      usuarios.forEach(u => {
+        const item = document.createElement("li");
+        item.textContent = u.usuario; // solo muestra nombre
+        lista.appendChild(item);
+      });
+    }
+
+    // -------------------------------
+    // MOSTRAR HISTORIAL
+    // -------------------------------
+    function mostrarHistorialAdmin() {
+      const historial = JSON.parse(localStorage.getItem("historial")) || [];
+      const tablaHist = document.getElementById("tabla-historial");
+      tablaHist.innerHTML = `
+        <tr>
+          <th>Usuario</th>
+          <th>Libro</th>
+          <th>Acción</th>
+          <th>Fecha</th>
+        </tr>
+      `;
+      historial.forEach(mov => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${mov.usuario}</td>
+          <td>${mov.libro}</td>
+          <td>${mov.accion}</td>
+          <td>${mov.fecha}</td>
+        `;
+        tablaHist.appendChild(fila);
+      });
+    }
+  </script>
+</body>
+</html>
